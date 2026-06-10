@@ -1,0 +1,120 @@
+import tkinter as tk
+from tkinter import messagebox
+import math
+
+emails_treino = [
+    ("ganhe dinheiro agora clique aqui", "SPAM"),
+    ("promoção imperdível só hoje", "SPAM"),
+    ("você ganhou um prêmio", "SPAM"),
+    ("confirme sua senha urgente", "SPAM"),
+    ("sua conta será bloqueada clique no link", "SPAM"),
+    ("faça um pix para liberar seu prêmio", "SPAM"),
+    ("vou hackear sua conta", "SPAM"),
+    ("seu computador está com vírus", "SPAM"),
+    ("clique no link para verificar sua conta", "SPAM"),
+    ("oferta exclusiva por tempo limitado", "SPAM"),
+
+    ("oi tudo bem", "SEGURO"),
+    ("segue o trabalho da faculdade", "SEGURO"),
+    ("reunião amanhã às oito", "SEGURO"),
+    ("professor enviou o material da aula", "SEGURO"),
+    ("preciso falar com você depois", "SEGURO"),
+    ("vamos almoçar hoje", "SEGURO"),
+    ("segue em anexo o relatório", "SEGURO"),
+    ("boa noite, tudo certo", "SEGURO"),
+    ("a aula foi remarcada para sexta", "SEGURO"),
+    ("enviei o arquivo solicitado", "SEGURO")
+]
+
+def separar_palavras(texto):
+    texto = texto.lower()
+
+    for simbolo in ".,!?;:/()[]{}@#$%&*-_":
+        texto = texto.replace(simbolo, " ")
+
+    return texto.split()
+
+def treinar_modelo(dados):
+    modelo = {"SPAM": {}, "SEGURO": {}}
+    total_palavras = {"SPAM": 0, "SEGURO": 0}
+    vocabulario = set()
+
+    for email, classe in dados:
+        palavras = separar_palavras(email)
+
+        for palavra in palavras:
+            vocabulario.add(palavra)
+
+            if palavra not in modelo[classe]:
+                modelo[classe][palavra] = 0
+
+            modelo[classe][palavra] += 1
+            total_palavras[classe] += 1
+
+    return modelo, total_palavras, vocabulario
+
+def classificar_email(email):
+    palavras = separar_palavras(email)
+    pontuacao = {"SPAM": 0, "SEGURO": 0}
+
+    for classe in ["SPAM", "SEGURO"]:
+        for palavra in palavras:
+            quantidade = modelo[classe].get(palavra, 0) + 1
+            total = total_palavras[classe] + len(vocabulario)
+            pontuacao[classe] += math.log(quantidade / total)
+
+    if pontuacao["SPAM"] > pontuacao["SEGURO"]:
+        resultado = "SPAM"
+    else:
+        resultado = "SEGURO"
+
+    diferenca = abs(pontuacao["SPAM"] - pontuacao["SEGURO"])
+    confianca = min(99, round(50 + diferenca * 10))
+
+    return resultado, confianca
+
+def analisar_interface():
+    email = caixa_texto.get("1.0", tk.END)
+
+    if email.strip() == "":
+        messagebox.showwarning("Aviso", "Digite um e-mail para analisar.")
+        return
+
+    resultado, confianca = classificar_email(email)
+
+    messagebox.showinfo(
+        "Resultado da IA",
+        f"Classificação: {resultado}\n\n"
+        f"Confiança da IA: {confianca}%"
+    )
+
+modelo, total_palavras, vocabulario = treinar_modelo(emails_treino)
+
+janela = tk.Tk()
+janela.title("Detector de Spam com IA")
+janela.geometry("550x400")
+
+titulo = tk.Label(
+    janela,
+    text="Detector Inteligente de Spam",
+    font=("Arial", 18)
+)
+titulo.pack(pady=10)
+
+descricao = tk.Label(
+    janela,
+    text="Digite o conteúdo do e-mail para a IA analisar:"
+)
+descricao.pack()
+
+caixa_texto = tk.Text(janela, height=12, width=60)
+caixa_texto.pack(pady=10)
+
+botao = tk.Button(
+    janela,
+    text="Analisar E-mail",
+    command=analisar_interface
+)
+botao.pack(pady=10)
+
+janela.mainloop()
